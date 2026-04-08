@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPI Seni Teater SD - Bab 3</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- React & ReactDOM (UMD) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone (for JSX in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Sembunyikan scrollbar untuk UI bergaya game */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.4);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [screen, setScreen] = useState('welcome'); // welcome, home, tujuan, materi, petualang, game, asesmen, hots
+      const [isFullscreen, setIsFullscreen] = useState(false);
+      
+      // User Profile
+      const [user, setUser] = useState({ name: '', school: '' });
+      const [isProfileSet, setIsProfileSet] = useState(false);
+
+      // Game Progress State: level -> difficulty -> isCompleted
+      const [progress, setProgress] = useState({
+        1: { easy: false, medium: false, hard: false },
+        2: { easy: false, medium: false, hard: false },
+        3: { easy: false, medium: false, hard: false }
+      });
+
+      const [activeLevel, setActiveLevel] = useState(1);
+      const [activeDifficulty, setActiveDifficulty] = useState('easy');
+
+      // Fullscreen Handler
+      const toggleFullScreen = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+          });
+          setIsFullscreen(true);
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+            setIsFullscreen(false);
+          }
+        }
+      };
+
+      useEffect(() => {
+        const handleFullscreenChange = () => {
+          setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      }, []);
+
+      // Calculate Progress
+      const totalChallenges = 9;
+      const completedChallenges = Object.values(progress).reduce((acc, level) => {
+        return acc + Object.values(level).filter(Boolean).length;
+      }, 0);
+      const progressPercentage = Math.round((completedChallenges / totalChallenges) * 100);
+
+      // --- CONTENT DATA ---
+      const materiData = [
+        {
+          title: "Sub Bab 1: Tata Panggung & Properti",
+          content: "Tata panggung adalah pengaturan letak benda-benda di atas panggung agar suasana cerita lebih terasa. Properti adalah benda-benda yang digunakan aktor saat bermain peran, seperti tongkat, keranjang, atau pedang mainan. Properti membantu aktor menghidupkan karakternya."
+        },
+        {
+          title: "Sub Bab 2: Tata Rias & Busana",
+          content: "Tata rias wajah berguna untuk memperjelas karakter yang dimainkan (misalnya membuat wajah terlihat tua atau seperti hewan). Tata busana (kostum) adalah pakaian yang dipakai aktor sesuai dengan peran. Jika bermain sebagai petani, maka memakai caping dan baju sederhana."
+        },
+        {
+          title: "Sub Bab 3: Musik & Efek Suara",
+          content: "Musik pengiring berguna untuk membangun suasana (sedih, gembira, menegangkan). Efek suara adalah bunyi tiruan untuk adegan tertentu, seperti suara petir, suara pintu berderit, atau suara langkah kaki."
+        }
+      ];
+
+      // Game Questions Data (HOTS & Fun integrated)
+      const gameData = {
+        1: { // Level 1: Properti
+          easy: { q: "Manakah benda yang termasuk properti tangan?", options: ["Lampu Sorot", "Kipas Lipat", "Tirai Panggung", "Karpet"], ans: 1 },
+          medium: { q: "Budi berperan sebagai Ksatria. Properti apa yang paling cocok ia bawa?", options: ["Buku tebal", "Payung", "Pedang dan Perisai", "Sapu terbang"], ans: 2 },
+          hard: { q: "Panggung terlihat kosong. Ceritanya berlatar di hutan. Benda apa yang paling tepat diletakkan sebagai tata panggung?", options: ["Kursi sofa mewah", "Pohon buatan dari kardus", "Kulkas", "Papan tulis"], ans: 1 }
+        },
+        2: { // Level 2: Rias & Busana
+          easy: { q: "Apa fungsi utama tata rias dalam teater?", options: ["Agar aktor terlihat cantik/tampan saja", "Memperjelas karakter dan watak tokoh", "Agar wajah tidak berkeringat", "Menutupi wajah aktor sepenuhnya"], ans: 1 },
+          medium: { q: "Siti berperan sebagai nenek renta. Riasan seperti apa yang dibutuhkannya?", options: ["Garis-garis keriput di wajah", "Lipstik merah merona", "Riasan badut", "Riasan mata yang cerah"], ans: 0 },
+          hard: { q: "Timmu membuat kostum 'Manusia Robot' menggunakan barang bekas. Bahan apa yang paling efisien dan sesuai?", options: ["Kardus bekas dan aluminium foil", "Kain sutra mahal", "Daun-daunan kering", "Bulu ayam"], ans: 0 }
+        },
+        3: { // Level 3: Suasana & Evaluasi
+          easy: { q: "Suara 'JEDAAAR!' dalam teater biasanya menandakan adegan apa?", options: ["Orang tertidur", "Petir atau ledakan", "Burung bernyanyi", "Matahari terbit"], ans: 1 },
+          medium: { q: "Adegan sangat sedih karena tokoh utama kehilangan hewannya. Musik seperti apa yang cocok?", options: ["Musik bertempo cepat dan ceria", "Musik drum band", "Musik bertempo lambat dengan nada lembut", "Tidak perlu musik"], ans: 2 },
+          hard: { q: "Saat pentas, tiba-tiba lampu panggung mati sesaat. Apa yang sebaiknya dilakukan aktor?", options: ["Berhenti berakting dan turun panggung", "Menangis", "Tetap tenang, berimprovisasi, dan melanjutkan dialog", "Menyalahkan panitia lampu"], ans: 2 }
+        }
+      };
+
+      // --- SCREENS ---
+
+      // 1. Welcome Screen
+      const WelcomeScreen = () => (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm p-8 text-white relative">
+          <div className="absolute top-4 right-4 cursor-pointer bg-white/20 p-3 rounded-full hover:bg-white/40 transition flex items-center justify-center w-12 h-12" onClick={toggleFullScreen}>
+            <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-xl`}></i>
+          </div>
+          
+          <div className="bg-white/95 backdrop-blur-md text-slate-800 p-8 rounded-3xl shadow-2xl max-w-2xl w-full text-center border-b-8 border-indigo-700">
+            <div className="flex justify-center mb-6">
+              <img 
+                src="https://iili.io/BYUEGWl.png" 
+                alt="Pak Rahmat" 
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-orange-400 shadow-xl bg-orange-100 p-1"
+              />
+            </div>
+            <h1 className="text-4xl font-extrabold mb-2 text-indigo-800">Halo Anak-Anak Hebat!</h1>
+            <p className="text-xl mb-6 font-medium">
+              "Bapak Rahmat di sini! Selamat datang di Petualangan Seni Teater Bab 3. 
+              Siapkan imajinasimu, mari kita belajar menjadi seniman panggung yang luar biasa. 
+              Sebelum mulai, isi data diri kalian dulu ya!"
+            </p>
+
+            <div className="space-y-4 mb-8 text-left">
+              <div>
+                <label className="block text-lg font-bold mb-2 flex items-center gap-2">
+                  <i className="fas fa-user text-indigo-600"></i> Nama Lengkap Pahlawan Teater:
+                </label>
+                <input 
+                  type="text" 
+                  className="w-full text-xl p-4 rounded-xl border-2 border-slate-300 focus:border-indigo-500 outline-none shadow-inner"
+                  placeholder="Ketik namamu di sini..."
+                  value={user.name}
+                  onChange={(e) => setUser({...user, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-lg font-bold mb-2 flex items-center gap-2">
+                  <i className="fas fa-school text-indigo-600"></i> Asal Sekolah:
+                </label>
+                <input 
+                  type="text" 
+                  className="w-full text-xl p-4 rounded-xl border-2 border-slate-300 focus:border-indigo-500 outline-none shadow-inner"
+                  placeholder="Ketik nama sekolahmu..."
+                  value={user.school}
+                  onChange={(e) => setUser({...user, school: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                if(user.name.trim() !== '') {
+                  setIsProfileSet(true);
+                  setScreen('home');
+                }
+              }}
+              className={`w-full py-5 rounded-2xl text-2xl font-bold text-white transition-all transform active:scale-95 shadow-lg ${user.name.trim() ? 'bg-green-500/90 hover:bg-green-600 border-b-4 border-green-700' : 'bg-gray-400/80 cursor-not-allowed'}`}
+            >
+              MULAI PETUALANGAN! 🚀
+            </button>
+          </div>
+        </div>
+      );
+
+      // Top Bar Component for inner screens
+      const TopBar = ({ title }) => (
+        <div className="bg-indigo-900/80 backdrop-blur-md text-white p-4 flex justify-between items-center shadow-md">
+          <button onClick={() => setScreen('home')} className="flex items-center gap-2 bg-indigo-600/80 hover:bg-indigo-500 px-4 py-3 rounded-xl font-bold transition">
+            <i className="fas fa-home text-xl"></i> Menu Utama
+          </button>
+          <h2 className="text-2xl font-black tracking-wider uppercase hidden md:block">{title}</h2>
+          <div className="flex gap-4 items-center">
+            <div className="bg-indigo-900 px-4 py-2 rounded-full font-bold flex items-center gap-2">
+              <i className="fas fa-user"></i> {user.name || 'Pemain'}
+            </div>
+            <button onClick={toggleFullScreen} className="bg-indigo-600 hover:bg-indigo-500 w-12 h-12 rounded-xl transition flex items-center justify-center">
+              <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-xl`}></i>
+            </button>
+          </div>
+        </div>
+      );
+
+      // Menu Card Component
+      const MenuCard = ({ iconClass, color, title, desc, onClick, highlight }) => (
+        <div 
+          onClick={onClick}
+          className={`relative h-full overflow-hidden cursor-pointer rounded-3xl shadow-xl transform transition hover:-translate-y-2 hover:shadow-2xl flex flex-col p-8 text-white ${color} border border-white/20 ${highlight ? 'ring-4 ring-yellow-400 ring-offset-4 ring-offset-black/20 animate-pulse-slow' : ''}`}
+        >
+          <div className="absolute -right-6 -top-6 opacity-20 transform rotate-12">
+            <i className={`${iconClass} text-9xl`}></i>
+          </div>
+          <div className="mb-4 bg-white/20 w-max p-4 rounded-2xl backdrop-blur-sm flex justify-center items-center">
+            <i className={`${iconClass} text-5xl`}></i>
+          </div>
+          <h3 className="text-3xl font-bold mb-2 z-10">{title}</h3>
+          <p className="text-lg font-medium opacity-90 z-10">{desc}</p>
+        </div>
+      );
+
+      // 2. Home Screen (Dashboard)
+      const HomeScreen = () => (
+        <div className="min-h-screen bg-black/30 backdrop-blur-sm flex flex-col">
+          <TopBar title="Pusat Komando Teater" />
+          <div className="flex-1 p-8">
+            
+            {/* Progress Tracker */}
+            <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-lg mb-8 border-2 border-slate-200/50">
+              <div className="flex justify-between items-end mb-2">
+                <h3 className="text-xl font-bold text-slate-700 flex items-center gap-2">
+                  <i className="fas fa-medal text-yellow-500 text-2xl"></i> Progres Petualanganmu:
+                </h3>
+                <span className="text-2xl font-black text-indigo-600">{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-6 border-inner shadow-inner">
+                <div className="bg-gradient-to-r from-green-400 to-green-600 h-6 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
+              </div>
+            </div>
+
+            {/* Menu Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 max-w-6xl mx-auto w-full">
+              <div className="lg:col-span-2 md:col-span-1">
+                <MenuCard iconClass="fas fa-bullseye" color="bg-blue-600/80 backdrop-blur-md" title="1. Tujuan & Panduan" desc="Apa misi kita hari ini?" onClick={() => setScreen('tujuan')} />
+              </div>
+              <div className="lg:col-span-2 md:col-span-1">
+                <MenuCard iconClass="fas fa-book-open" color="bg-emerald-600/80 backdrop-blur-md" title="2. Rangkuman Materi" desc="Bekal ilmu sebelum beraksi." onClick={() => setScreen('materi')} />
+              </div>
+              <div className="lg:col-span-2 md:col-span-2">
+                <MenuCard iconClass="fas fa-gamepad" color="bg-orange-600/80 backdrop-blur-md" title="3. Ayo Berpetualang" desc="Mainkan tantangan 3 Level!" onClick={() => setScreen('petualang')} highlight={true} />
+              </div>
+              <div className="lg:col-span-2 lg:col-start-2 md:col-span-1">
+                <MenuCard iconClass="fas fa-medal" color="bg-purple-600/80 backdrop-blur-md" title="4. Asesmen Sumatif" desc="Tugas Proyek Praktek Kelas." onClick={() => setScreen('asesmen')} />
+              </div>
+              <div className="lg:col-span-2 md:col-span-1">
+                <MenuCard iconClass="fas fa-brain" color="bg-rose-600/80 backdrop-blur-md" title="5. Tantangan HOTS" desc="Uji kemampuan berpikirmu." onClick={() => setScreen('hots')} />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // 3. Tujuan & Panduan
+      const TujuanScreen = () => (
+        <div className="min-h-screen bg-black/40 backdrop-blur-sm flex flex-col">
+          <TopBar title="Tujuan & Panduan" />
+          <div className="flex-1 p-8 flex justify-center items-center">
+            <div className="bg-white/95 backdrop-blur-md p-8 rounded-3xl shadow-xl max-w-4xl w-full flex flex-col md:flex-row gap-8">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold text-blue-800 mb-6 flex items-center gap-3">
+                  <i className="fas fa-bullseye text-3xl"></i> Tujuan Pembelajaran
+                </h2>
+                <ul className="space-y-4 text-xl">
+                  <li className="flex items-start gap-3"><i className="fas fa-check-circle text-green-500 mt-1"></i> Peserta didik dapat mengidentifikasi unsur pendukung pementasan (properti, rias, busana).</li>
+                  <li className="flex items-start gap-3"><i className="fas fa-check-circle text-green-500 mt-1"></i> Peserta didik mampu merancang properti dan busana sederhana dari bahan sekitar.</li>
+                  <li className="flex items-start gap-3"><i className="fas fa-check-circle text-green-500 mt-1"></i> Peserta didik dapat mensimulasikan peran dengan dukungan tata rias dan suara.</li>
+                </ul>
+              </div>
+              <div className="w-1 bg-slate-200 hidden md:block rounded-full"></div>
+              <div className="flex-1 bg-blue-100/80 p-6 rounded-2xl border-2 border-blue-200">
+                <h2 className="text-2xl font-bold text-blue-900 mb-4">Panduan Penggunaan</h2>
+                <p className="text-lg mb-3">1. Baca <b>Rangkuman Materi</b> dengan teliti bersama guru.</p>
+                <p className="text-lg mb-3">2. Masuk ke <b>Ayo Berpetualang</b>. Buka gembok dengan menjawab tantangan.</p>
+                <p className="text-lg mb-3">3. Kamu harus melewati tingkat <b>Mudah</b>, <b>Sedang</b>, dan <b>Sulit</b> untuk tamat!</p>
+                <p className="text-lg mb-3">4. Sentuh layar Papan Interaktif (IFP) dengan jarimu untuk memilih jawaban.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // 4. Rangkuman Materi
+      const MateriScreen = () => {
+        const [activeTab, setActiveTab] = useState(0);
+        return (
+          <div className="min-h-screen bg-black/40 backdrop-blur-sm flex flex-col">
+            <TopBar title="Rangkuman Materi Bab 3" />
+            <div className="flex-1 p-8 flex flex-col items-center">
+              <div className="flex flex-wrap justify-center gap-4 mb-8 w-full max-w-5xl">
+                {materiData.map((m, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setActiveTab(idx)}
+                    className={`px-6 py-4 rounded-2xl text-xl font-bold transition-all shadow-md backdrop-blur-sm border border-white/30 ${activeTab === idx ? 'bg-emerald-600/90 text-white transform scale-105' : 'bg-white/80 text-emerald-900 hover:bg-emerald-100'}`}
+                  >
+                    {m.title}
+                  </button>
+                ))}
+              </div>
+              <div className="bg-white/95 backdrop-blur-md p-10 rounded-3xl shadow-xl max-w-5xl w-full border-t-8 border-emerald-500 text-center min-h-[40vh] flex flex-col justify-center">
+                <h2 className="text-4xl font-extrabold text-emerald-900 mb-8">{materiData[activeTab].title}</h2>
+                <p className="text-2xl leading-relaxed text-slate-800">{materiData[activeTab].content}</p>
+                
+                <div className="mt-12 flex justify-center text-8xl drop-shadow-lg">
+                  {activeTab === 0 ? '🎭 🛋️ 🪄' : activeTab === 1 ? '👗 🤡 👑' : '🥁 ⛈️ 🎶'}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // 5. Ayo Berpetualang (Map/Levels)
+      const PetualangScreen = () => {
+        const renderLevelButton = (levelNum, title, icon) => {
+          // Level is unlocked if previous level is fully completed. Level 1 is always unlocked.
+          let isUnlocked = true;
+          if (levelNum > 1) {
+            const prev = progress[levelNum - 1];
+            isUnlocked = prev.easy && prev.medium && prev.hard;
+          }
+          
+          const curr = progress[levelNum];
+          const isCompleted = curr.easy && curr.medium && curr.hard;
+
+          return (
+            <div className="flex flex-col items-center gap-4" key={`level-${levelNum}`}>
+              <button 
+                disabled={!isUnlocked}
+                onClick={() => { setActiveLevel(levelNum); setScreen('game'); }}
+                className={`w-48 h-48 rounded-full flex flex-col items-center justify-center text-white text-xl font-bold shadow-2xl transition-all transform hover:scale-105 border-8 backdrop-blur-sm ${
+                  !isUnlocked ? 'bg-slate-500/80 border-slate-600 cursor-not-allowed opacity-80' :
+                  isCompleted ? 'bg-green-600/90 border-green-400' :
+                  'bg-orange-600/90 border-orange-400 active:scale-95'
+                }`}
+              >
+                <div className="text-5xl mb-2 drop-shadow-md">{!isUnlocked ? '🔒' : icon}</div>
+                <div className="text-2xl drop-shadow-md">Level {levelNum}</div>
+              </button>
+              <div className="bg-white/90 backdrop-blur-sm py-2 px-6 rounded-xl font-bold text-lg shadow-md flex gap-2 border border-white/40">
+                <i className={`fas fa-star ${curr.easy ? 'text-yellow-500' : 'text-slate-400'}`}></i>
+                <i className={`fas fa-star ${curr.medium ? 'text-yellow-500' : 'text-slate-400'}`}></i>
+                <i className={`fas fa-star ${curr.hard ? 'text-yellow-500' : 'text-slate-400'}`}></i>
+              </div>
+              <div className="text-xl font-bold text-white bg-black/50 backdrop-blur-md px-4 py-1 rounded-full shadow-lg border border-white/20">{title}</div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="min-h-screen bg-black/40 backdrop-blur-sm flex flex-col">
+            <TopBar title="Peta Petualangan Teater" />
+            <div className="flex-1 p-8 flex flex-col items-center justify-center relative overflow-hidden">
+              {/* Decorative Path */}
+              <div className="absolute top-1/2 left-0 w-full h-4 bg-orange-400/50 backdrop-blur-sm -z-10 transform -translate-y-1/2 border-y-2 border-orange-300 border-dashed"></div>
+              
+              <div className="flex flex-col md:flex-row gap-16 md:gap-24 items-center justify-center max-w-6xl w-full z-10">
+                {renderLevelButton(1, "Properti", "🪄")}
+                {renderLevelButton(2, "Busana", "👗")}
+                {renderLevelButton(3, "Pementasan", "🎭")}
+              </div>
+
+              {progressPercentage === 100 && (
+                <div className="mt-16 bg-yellow-400/90 backdrop-blur-md text-yellow-900 px-8 py-4 rounded-3xl text-3xl font-black shadow-2xl animate-bounce border-4 border-white">
+                  🎉 SELAMAT! KAMU TELAH MENAKLUKKAN SEMUA TANTANGAN! 🎉
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      // 6. Game Engine Screen
+      const GameScreen = () => {
+        const [gameState, setGameState] = useState('select-difficulty'); // select-difficulty, playing, feedback
+        const [selectedDiff, setSelectedDiff] = useState(null);
+        const [feedback, setFeedback] = useState(null); // 'correct' or 'wrong'
+
+        const levelTitles = { 1: "Tata Properti", 2: "Rias & Busana", 3: "Musik & Suasana" };
+        const diffMap = { easy: "Mudah", medium: "Sedang", hard: "Sulit" };
+
+        const handleAnswer = (selectedIndex) => {
+          const correctIndex = gameData[activeLevel][selectedDiff].ans;
+          if (selectedIndex === correctIndex) {
+            setFeedback('correct');
+            setProgress(prev => ({
+              ...prev,
+              [activeLevel]: {
+                ...prev[activeLevel],
+                [selectedDiff]: true
+              }
+            }));
+          } else {
+            setFeedback('wrong');
+          }
+          setGameState('feedback');
+        };
+
+        if (gameState === 'select-difficulty') {
+          return (
+            <div className="min-h-screen bg-black/50 backdrop-blur-sm flex flex-col">
+              <TopBar title={`Level ${activeLevel} : ${levelTitles[activeLevel]}`} />
+              <div className="flex-1 flex flex-col items-center justify-center p-8">
+                <button onClick={() => setScreen('petualang')} className="mb-8 flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white px-6 py-3 rounded-full text-xl font-bold text-slate-800 transition shadow-lg">
+                  <i className="fas fa-arrow-left"></i> Kembali ke Peta
+                </button>
+                <h2 className="text-4xl font-black text-white drop-shadow-xl mb-12 bg-black/30 px-8 py-4 rounded-3xl backdrop-blur-md border border-white/20">Pilih Tingkat Kesulitan:</h2>
+                <div className="flex gap-8 flex-wrap justify-center">
+                  {['easy', 'medium', 'hard'].map((diff) => {
+                    const isCompleted = progress[activeLevel][diff];
+                    const colors = { easy: 'bg-green-500/90', medium: 'bg-yellow-500/90', hard: 'bg-red-500/90' };
+                    return (
+                      <button
+                        key={diff}
+                        onClick={() => { setSelectedDiff(diff); setGameState('playing'); }}
+                        className={`${colors[diff]} backdrop-blur-md text-white w-48 h-48 rounded-3xl text-3xl font-bold flex flex-col items-center justify-center shadow-2xl hover:-translate-y-2 transition-transform border border-white/30`}
+                      >
+                        {isCompleted ? <i className="fas fa-check-circle text-5xl mb-2 text-white"></i> : <i className="fas fa-star text-5xl mb-2 drop-shadow-md"></i>}
+                        <span className="drop-shadow-md">{diffMap[diff]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (gameState === 'playing') {
+          const qData = gameData[activeLevel][selectedDiff];
+          return (
+            <div className="min-h-screen bg-black/60 backdrop-blur-md text-white flex flex-col">
+              <TopBar title={`Level ${activeLevel} - ${diffMap[selectedDiff]}`} />
+              <div className="flex-1 flex flex-col items-center p-8 max-w-5xl mx-auto w-full">
+                <div className="bg-white/95 backdrop-blur-lg text-indigo-900 p-8 rounded-3xl w-full mb-8 shadow-2xl mt-8 border-2 border-indigo-200">
+                  <h3 className="text-4xl font-bold text-center leading-normal">{qData.q}</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                  {qData.options.map((opt, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => handleAnswer(idx)}
+                      className="bg-indigo-600/90 backdrop-blur-md hover:bg-indigo-500 text-white p-6 rounded-2xl text-2xl font-bold text-left shadow-xl border border-indigo-400 active:translate-y-1 transition-all flex items-center gap-4"
+                    >
+                      <div className="bg-white/30 w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-white/50">
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+                      <span className="drop-shadow-md">{opt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (gameState === 'feedback') {
+          const isCorrect = feedback === 'correct';
+          return (
+            <div className={`min-h-screen flex flex-col items-center justify-center p-8 text-white backdrop-blur-md ${isCorrect ? 'bg-green-600/80' : 'bg-red-600/80'}`}>
+              <div className="bg-white/95 backdrop-blur-lg text-center p-12 rounded-3xl shadow-2xl max-w-2xl w-full border border-white/50">
+                {isCorrect ? (
+                  <>
+                    <i className="fas fa-check-circle text-[100px] text-green-600 mx-auto mb-6 drop-shadow-md block"></i>
+                    <h2 className="text-5xl font-black text-green-700 mb-4">Luar Biasa, {user.name}!</h2>
+                    <p className="text-2xl text-slate-800 mb-8 font-medium">Jawabanmu tepat sekali. Kamu mendapatkan 1 Bintang Emas!</p>
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-times-circle text-[100px] text-red-600 mx-auto mb-6 drop-shadow-md block"></i>
+                    <h2 className="text-5xl font-black text-red-700 mb-4">Ops, Kurang Tepat!</h2>
+                    <p className="text-2xl text-slate-800 mb-8 font-medium">Ayo jangan menyerah, coba baca lagi soalnya dengan teliti ya.</p>
+                  </>
+                )}
+                
+                <button 
+                  onClick={() => setGameState('select-difficulty')}
+                  className="bg-indigo-600 text-white px-8 py-4 rounded-full text-2xl font-bold shadow-xl hover:bg-indigo-700 transition border border-indigo-400"
+                >
+                  {isCorrect ? 'Lanjut Bermain' : 'Coba Lagi'}
+                </button>
+              </div>
+            </div>
+          )
+        }
+      };
+
+      // 7. Asesmen Sumatif (Proyek)
+      const AsesmenScreen = () => (
+        <div className="min-h-screen bg-black/40 backdrop-blur-sm flex flex-col">
+          <TopBar title="Asesmen Sumatif" />
+          <div className="flex-1 p-8 flex flex-col items-center">
+            <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border-2 border-purple-300">
+              <div className="bg-purple-700/90 text-white p-8 text-center backdrop-blur-sm">
+                <h2 className="text-4xl font-black mb-2 flex justify-center items-center gap-3 drop-shadow-md">
+                  <i className="fas fa-medal"></i> Misi Proyek: Panggung Mini Kelas
+                </h2>
+                <p className="text-xl opacity-90 font-medium">Aktivitas Praktik Kelompok</p>
+              </div>
+              <div className="p-8 text-xl text-slate-800 space-y-6">
+                <p>
+                  Bentuklah kelompok yang terdiri dari 4-5 orang. Berdasarkan materi Bab 3 yang telah dipelajari, kalian ditantang untuk membuat <b>Pementasan Fabel Singkat (Durasi 5 Menit)</b>.
+                </p>
+                <div className="bg-purple-100/80 p-6 rounded-2xl border border-purple-300 shadow-inner">
+                  <h3 className="font-bold text-2xl mb-4 text-purple-900">Tugas Setiap Kelompok:</h3>
+                  <ol className="list-decimal pl-6 space-y-3">
+                    <li><b>Pilih Cerita:</b> Siapkan satu naskah fabel sederhana (misal: Kelinci dan Kura-kura).</li>
+                    <li><b>Rancang Busana & Rias:</b> Buatlah kostum hewan menggunakan bahan bekas (kardus, koran, atau kain sisa) dan gambar rancangan riasan wajahnya.</li>
+                    <li><b>Buat Properti:</b> Buat minimal 2 properti yang mendukung adegan.</li>
+                    <li><b>Efek Suara:</b> Tentukan suara alam apa saja yang akan dibuat menggunakan mulut atau benda sekitar saat pentas.</li>
+                    <li><b>Pentas:</b> Tampilkan di depan kelas secara bergantian!</li>
+                  </ol>
+                </div>
+                <p className="text-center font-bold text-purple-700 italic text-2xl mt-4">
+                  "Kreativitas bukan dari seberapa mahal bajumu, tapi seberapa pintar idemu!"
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // 8. Tantangan HOTS
+      const HotsScreen = () => (
+        <div className="min-h-screen bg-black/40 backdrop-blur-sm flex flex-col">
+          <TopBar title="Tantangan HOTS" />
+          <div className="flex-1 p-8 flex flex-col items-center justify-center">
+            <div className="bg-white/95 backdrop-blur-md p-10 rounded-3xl shadow-2xl max-w-4xl border border-white/50 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-2 h-full bg-rose-500"></div>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-rose-100 p-4 rounded-2xl text-rose-600 shadow-sm flex items-center justify-center w-20 h-20">
+                  <i className="fas fa-brain text-5xl"></i>
+                </div>
+                <h2 className="text-4xl font-bold text-rose-900">Uji Bernalar Kritis</h2>
+              </div>
+              
+              <div className="text-2xl text-slate-800 leading-relaxed space-y-6 mb-8">
+                <p className="italic bg-slate-100/80 p-6 rounded-xl border border-slate-300 shadow-inner">
+                  "Bayangkan kelasmu ditugaskan mementaskan cerita sejarah Pahlawan Nasional. Saat gladi bersih (latihan terakhir), salah satu temanmu yang bertugas memegang properti pedang buatan lupa membawanya, padahal pementasan akan dimulai dalam 30 menit dan kalian tidak bisa pulang ke rumah."
+                </p>
+                <p className="font-bold text-rose-800 text-3xl mt-6">
+                  Pertanyaan Diskusi Kelas:
+                </p>
+                <ul className="list-disc pl-8 space-y-2 font-medium">
+                  <li>Sebagai tim tata properti yang kreatif, benda apa saja yang ada di ruang kelas yang bisa kamu modifikasi dalam 10 menit untuk menjadi pengganti pedang sementara?</li>
+                  <li>Bagaimana cara aktor tetap berakting menyakinkan meskipun propertinya bukan pedang sungguhan?</li>
+                </ul>
+              </div>
+
+              <div className="bg-orange-100/90 text-orange-900 p-6 rounded-xl text-center font-bold text-xl border border-orange-300 shadow-sm">
+                Ayo diskusikan jawaban hebatmu langsung dengan Pak Guru/Bu Guru di kelas! 🙋‍♂️🙋‍♀️
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // --- ROUTER & WRAPPER ---
+      const renderScreen = () => {
+        if (screen === 'welcome') return <WelcomeScreen />;
+        if (screen === 'home') return <HomeScreen />;
+        if (screen === 'tujuan') return <TujuanScreen />;
+        if (screen === 'materi') return <MateriScreen />;
+        if (screen === 'petualang') return <PetualangScreen />;
+        if (screen === 'game') return <GameScreen />;
+        if (screen === 'asesmen') return <AsesmenScreen />;
+        if (screen === 'hots') return <HotsScreen />;
+        return null;
+      };
+
+      return (
+        <div 
+          className="min-h-screen w-full bg-cover bg-center bg-fixed transition-all duration-500 ease-in-out"
+          style={{ backgroundImage: "url('https://iili.io/BYUby7V.jpg')" }}
+        >
+          {renderScreen()}
+        </div>
+      );
+    }
+
+    // Render App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
